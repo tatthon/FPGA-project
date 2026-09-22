@@ -72,11 +72,10 @@ module tt_um_vga_example(
   wire inp_r;
 
 
-  gamepad_pmod_single gamepad_driver (
+  gamepad_pmod_single gamepad_driver(
     .rst_n(rst_n),
     .clk(clk),
 
-    // Gamepad Pmod connection
     .pmod_data(ui_in[6]),
     .pmod_clk(ui_in[5]),
     .pmod_latch(ui_in[4]),
@@ -107,6 +106,7 @@ module tt_um_vga_example(
   wire game_tick = (game_counter == 20'd999_999);
 
   always @(posedge clk or negedge rst_n) begin
+
     if (!rst_n)
       game_counter <= 20'd0;
 
@@ -115,6 +115,7 @@ module tt_um_vga_example(
 
     else
       game_counter <= game_counter + 20'd1;
+
   end
 
 
@@ -140,8 +141,7 @@ module tt_um_vga_example(
   reg signed [10:0] player_velocity;
 
   localparam signed [10:0] JUMP_SPEED = -11'sd30;
-
-  localparam signed [10:0] GRAVITY = 11'sd2;
+  localparam signed [10:0] GRAVITY    =  11'sd2;
 
 
   wire [9:0] player_ground_y =
@@ -167,10 +167,7 @@ module tt_um_vga_example(
 
     else if (game_tick && !game_over) begin
 
-      // =====================================================
-      // กดลูกศรขึ้นบน Gamepad = กระโดด
-      // =====================================================
-
+      // กด UP เพื่อกระโดด
       if (inp_up && player_on_ground) begin
 
         player_velocity <= JUMP_SPEED;
@@ -240,9 +237,9 @@ module tt_um_vga_example(
   end
 
 
-  wire [9:0] obstacle;
+  wire [9:0] obstacle_y;
 
-  assign obstacle =
+  assign obstacle_y =
       GROUND_Y - obstacle_height;
 
 
@@ -255,7 +252,7 @@ module tt_um_vga_example(
       (PLAYER_X < obstacle_x + OBSTACLE_WIDTH) &&
       (PLAYER_X + PLAYER_W > obstacle_x) &&
 
-      (player_y > obstacle);
+      (player_y + PLAYER_H > obstacle_y);
 
 
   // =========================================================
@@ -301,28 +298,266 @@ module tt_um_vga_example(
 
   wire obstacle_on =
 
-      (pix_x >= obstacle_x) &&
-      (pix_x < obstacle_x + OBSTACLE_WIDTH) &&
+      ($signed({1'b0, pix_x}) >= obstacle_x) &&
+      ($signed({1'b0, pix_x}) < obstacle_x + OBSTACLE_WIDTH) &&
 
-      (pix_y >= obstacle) &&
+      (pix_y >= obstacle_y) &&
       (pix_y <= GROUND_Y);
 
 
   wire ground_on =
 
-      (pix_y >= 470) &&
-      (pix_y < 475);
+      (pix_y >= 10'd470) &&
+      (pix_y <  10'd475);
 
+
+  // =========================================================
+  // GAME OVER SCREEN
+  // =========================================================
 
   wire game_over_screen =
 
       game_over &&
 
-      (pix_x > 10) &&
-      (pix_x < 630) &&
+      (pix_x > 10'd10) &&
+      (pix_x < 10'd630) &&
 
-      (pix_y > 100) &&
-      (pix_y < 380);
+      (pix_y > 10'd100) &&
+      (pix_y < 10'd380);
+
+
+  // =========================================================
+  // "YOU LOSE" TEXT
+  // 5x7 FONT
+  // =========================================================
+
+  localparam [9:0] TEXT_X = 10'd192;
+  localparam [9:0] TEXT_Y = 10'd210;
+
+  wire text_area =
+
+      (pix_x >= TEXT_X) &&
+      (pix_x <  TEXT_X + 10'd256) &&
+
+      (pix_y >= TEXT_Y) &&
+      (pix_y <  TEXT_Y + 10'd28);
+
+
+  // แต่ละตัวอักษรใช้พื้นที่ 32 pixels
+  wire [2:0] char_index =
+      (pix_x - TEXT_X) >> 5;
+
+
+  // pixel ภายในตัวอักษร
+  wire [2:0] font_x =
+      ((pix_x - TEXT_X) & 10'd31) >> 2;
+
+
+  wire [2:0] font_y =
+      (pix_y - TEXT_Y) >> 2;
+
+
+  reg [4:0] font_bits;
+
+
+  // =========================================================
+  // FONT ROM
+  // =========================================================
+
+  always @(*) begin
+
+    font_bits = 5'b00000;
+
+    case (char_index)
+
+      // =====================================================
+      // Y
+      // =====================================================
+      3'd0: begin
+
+        case (font_y)
+
+          3'd0: font_bits = 5'b10001;
+          3'd1: font_bits = 5'b10001;
+          3'd2: font_bits = 5'b01010;
+          3'd3: font_bits = 5'b00100;
+          3'd4: font_bits = 5'b00100;
+          3'd5: font_bits = 5'b00100;
+          3'd6: font_bits = 5'b00100;
+
+          default:
+            font_bits = 5'b00000;
+
+        endcase
+
+      end
+
+
+      // =====================================================
+      // O
+      // =====================================================
+      3'd1: begin
+
+        case (font_y)
+
+          3'd0: font_bits = 5'b01110;
+          3'd1: font_bits = 5'b10001;
+          3'd2: font_bits = 5'b10001;
+          3'd3: font_bits = 5'b10001;
+          3'd4: font_bits = 5'b10001;
+          3'd5: font_bits = 5'b10001;
+          3'd6: font_bits = 5'b01110;
+
+          default:
+            font_bits = 5'b00000;
+
+        endcase
+
+      end
+
+
+      // =====================================================
+      // U
+      // =====================================================
+      3'd2: begin
+
+        case (font_y)
+
+          3'd0: font_bits = 5'b10001;
+          3'd1: font_bits = 5'b10001;
+          3'd2: font_bits = 5'b10001;
+          3'd3: font_bits = 5'b10001;
+          3'd4: font_bits = 5'b10001;
+          3'd5: font_bits = 5'b10001;
+          3'd6: font_bits = 5'b01110;
+
+          default:
+            font_bits = 5'b00000;
+
+        endcase
+
+      end
+
+
+      // =====================================================
+      // SPACE
+      // =====================================================
+      3'd3: begin
+
+        font_bits = 5'b00000;
+
+      end
+
+
+      // =====================================================
+      // L
+      // =====================================================
+      3'd4: begin
+
+        case (font_y)
+
+          3'd0: font_bits = 5'b10000;
+          3'd1: font_bits = 5'b10000;
+          3'd2: font_bits = 5'b10000;
+          3'd3: font_bits = 5'b10000;
+          3'd4: font_bits = 5'b10000;
+          3'd5: font_bits = 5'b10000;
+          3'd6: font_bits = 5'b11111;
+
+          default:
+            font_bits = 5'b00000;
+
+        endcase
+
+      end
+
+
+      // =====================================================
+      // O
+      // =====================================================
+      3'd5: begin
+
+        case (font_y)
+
+          3'd0: font_bits = 5'b01110;
+          3'd1: font_bits = 5'b10001;
+          3'd2: font_bits = 5'b10001;
+          3'd3: font_bits = 5'b10001;
+          3'd4: font_bits = 5'b10001;
+          3'd5: font_bits = 5'b10001;
+          3'd6: font_bits = 5'b01110;
+
+          default:
+            font_bits = 5'b00000;
+
+        endcase
+
+      end
+
+
+      // =====================================================
+      // S
+      // =====================================================
+      3'd6: begin
+
+        case (font_y)
+
+          3'd0: font_bits = 5'b01111;
+          3'd1: font_bits = 5'b10000;
+          3'd2: font_bits = 5'b10000;
+          3'd3: font_bits = 5'b01110;
+          3'd4: font_bits = 5'b00001;
+          3'd5: font_bits = 5'b00001;
+          3'd6: font_bits = 5'b11110;
+
+          default:
+            font_bits = 5'b00000;
+
+        endcase
+
+      end
+
+
+      // =====================================================
+      // E
+      // =====================================================
+      3'd7: begin
+
+        case (font_y)
+
+          3'd0: font_bits = 5'b11111;
+          3'd1: font_bits = 5'b10000;
+          3'd2: font_bits = 5'b10000;
+          3'd3: font_bits = 5'b11110;
+          3'd4: font_bits = 5'b10000;
+          3'd5: font_bits = 5'b10000;
+          3'd6: font_bits = 5'b11111;
+
+          default:
+            font_bits = 5'b00000;
+
+        endcase
+
+      end
+
+
+      default: begin
+
+        font_bits = 5'b00000;
+
+      end
+
+    endcase
+
+  end
+
+
+  wire game_over_text_on =
+
+      game_over &&
+      text_area &&
+      (font_x < 3'd5) &&
+      font_bits[4-font_x];
 
 
   // =========================================================
@@ -336,8 +571,7 @@ module tt_um_vga_example(
 
   always @(*) begin
 
-    // Default = Black
-
+    // default black
     r = 2'b00;
     g = 2'b00;
     b = 2'b00;
@@ -346,13 +580,15 @@ module tt_um_vga_example(
     if (video_active) begin
 
       // Background = Black
-
       r = 2'b00;
       g = 2'b00;
       b = 2'b00;
 
 
+      // =====================================================
       // Ground = White
+      // =====================================================
+
       if (ground_on) begin
 
         r = 2'b11;
@@ -362,7 +598,10 @@ module tt_um_vga_example(
       end
 
 
+      // =====================================================
       // Player = Green
+      // =====================================================
+
       if (player_on) begin
 
         r = 2'b00;
@@ -372,7 +611,10 @@ module tt_um_vga_example(
       end
 
 
+      // =====================================================
       // Obstacle = Red
+      // =====================================================
+
       if (obstacle_on) begin
 
         r = 2'b11;
@@ -382,11 +624,27 @@ module tt_um_vga_example(
       end
 
 
-      // Game Over = Blue
+      // =====================================================
+      // Game Over Background = Blue
+      // =====================================================
+
       if (game_over_screen) begin
 
         r = 2'b00;
         g = 2'b00;
+        b = 2'b10;
+
+      end
+
+
+      // =====================================================
+      // YOU LOSE = White
+      // =====================================================
+
+      if (game_over_text_on) begin
+
+        r = 2'b11;
+        g = 2'b11;
         b = 2'b11;
 
       end
