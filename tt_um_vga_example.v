@@ -95,10 +95,10 @@ module tt_um_vga_example(
   localparam signed [10:0] PLAYER_STAND_H = 11'sd36;
   localparam signed [10:0] PLAYER_SLIDE_W = 11'sd44;
   localparam signed [10:0] PLAYER_SLIDE_H = 11'sd18;
-  localparam signed [10:0] JUMP_SPEED = -11'sd30;
-  localparam signed [10:0] GRAVITY = 11'sd2;
+  localparam signed [10:0] JUMP_SPEED = -11'sd25;
+  localparam signed [10:0] GRAVITY = 11'sd3;
   localparam signed [10:0] OBSTACLE_WIDTH = 11'sd30;
-  localparam signed [10:0] OBSTACLE_SPEED = 11'sd5;
+  localparam signed [10:0] OBSTACLE_SPEED = 11'sd10;
 
   reg game_over;
   reg signed [10:0] player_y;
