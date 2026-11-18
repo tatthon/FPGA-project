@@ -22,18 +22,18 @@
 /**
  * gamepad_pmod_driver -- Serial interface for the Gamepad Pmod.
  *
- * This module reads raw data from the Gamepad Pmod serially
+ * This module reads raw data from the Gamepad Pmod *serially*
  * and stores it in a shift register. When the latch signal is received, 
- * the data is transferred into data_reg for further processing.
+ * the data is transferred into `data_reg` for further processing.
  *
  * Functionality:
- *   - Synchronizes the `pmod_data`, `pmod_clk`, and pmod_latch signals 
+ *   - Synchronizes the `pmod_data`, `pmod_clk`, and `pmod_latch` signals 
  *     to the system clock domain.
  *   - Captures serial data on each falling edge of `pmod_clk`.
- *   - Transfers the shifted data into data_reg when pmod_latch goes low.
+ *   - Transfers the shifted data into `data_reg` when `pmod_latch` goes low.
  *
  * Parameters:
- *   - `BIT_WIDTH`: Defines the width of data_reg (default: 24 bits).
+ *   - `BIT_WIDTH`: Defines the width of `data_reg` (default: 24 bits).
  *
  * Inputs:
  *   - `rst_n`: Active-low reset.
@@ -116,15 +116,15 @@ endmodule
  * whether a controller is connected.
  *
  * Functionality:
- *   - If data_reg contains all 1's (`0xFFF`), it indicates that no controller is connected.
+ *   - If `data_reg` contains all `1's` (`0xFFF`), it indicates that no controller is connected.
  *   - Otherwise, it extracts individual button states from `data_reg`.
  *
  * Inputs:
  *   - `data_reg [11:0]`: Captured button state data from the gamepad.
  *
  * Outputs:
- *   - `b, y, select, start, up, down, left, right, a, x, l, r`: Individual button states (`1` = pressed, 0 = released).
- *   - `is_present`: Indicates whether a controller is connected (`1` = connected, 0 = not connected).
+ *   - `b, y, select, start, up, down, left, right, a, x, l, r`: Individual button states (`1` = pressed, `0` = released).
+ *   - `is_present`: Indicates whether a controller is connected (`1` = connected, `0` = not connected).
  */
 module gamepad_pmod_decoder (
     input wire [11:0] data_reg,
@@ -158,11 +158,11 @@ endmodule
  * resource usage (fewer flip-flops) compared to a dual-controller version.
  * 
  * Inputs:
- *   - `pmod_data`, `pmod_clk`, and pmod_latch are the signals from the PMOD interface.
+ *   - `pmod_data`, `pmod_clk`, and `pmod_latch` are the signals from the PMOD interface.
  * 
  * Outputs:
  *   - Each button's state is provided as a single-bit wire (e.g., `start`, `up`, etc.).
- *   - is_present indicates whether the controller is connected (`1` = connected, 0 = not detected).
+ *   - `is_present` indicates whether the controller is connected (`1` = connected, `0` = not detected).
  */
 module gamepad_pmod_single (
     input wire rst_n,
@@ -228,12 +228,12 @@ endmodule
  *   - Index 0 corresponds to the first controller (e.g., up[0], y[0], etc.).
  *   - Index 1 corresponds to the second controller (e.g., up[1], y[1], etc.).
  *
- * The is_present signal indicates whether a controller is connected:
- *   - is_present[0] == 1 when the first controller is connected.
- *   - is_present[1] == 1 when the second controller is connected.
+ * The `is_present` signal indicates whether a controller is connected:
+ *   - `is_present[0] == 1` when the first controller is connected.
+ *   - `is_present[1] == 1` when the second controller is connected.
  *
  * Inputs:
- *   - `pmod_data`, `pmod_clk`, and pmod_latch are the 3 wires coming from the Pmod interface.
+ *   - `pmod_data`, `pmod_clk`, and `pmod_latch` are the 3 wires coming from the Pmod interface.
  *
  * Outputs:
  *   - Button state vectors for each controller.
